@@ -8,8 +8,8 @@ const darkCodeTheme = themes.dracula;
 const config = {
   title: 'DarkTree',
   tagline: 'Mapping the DarkTaxa',
-  url: 'https://darktree.github.io/',
-  baseUrl: '/',
+  url: 'https://darktree-insect-phylogenomics/',
+  baseUrl: '/darktree.github.io/',
   projectName: 'DarkTree.github.io',
   organizationName: 'DarkTree',
   trailingSlash: false,
