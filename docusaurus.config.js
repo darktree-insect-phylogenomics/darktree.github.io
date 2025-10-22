@@ -9,7 +9,7 @@ const config = {
   title: 'DarkTree',
   tagline: 'Mapping the DarkTaxa',
   url: 'https://darktree-insect-phylogenomics.github.io',
-  baseUrl: '/',
+  baseUrl: '/darktree.github.io/',
   projectName: 'DarkTree.github.io',
   organizationName: 'DarkTree',
   trailingSlash: false,
