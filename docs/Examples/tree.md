@@ -5,8 +5,6 @@ sidebar_label: Tree placement
 ---
 # Tree placement
 
-# Tree Example
-
 <>
   <div
     style={{
@@ -25,7 +23,7 @@ sidebar_label: Tree placement
     <iframe
       src="https://darktree-insect-phylogenomics.github.io/darktree.github.io/backbone/taxonium.html"
       frameborder="0"
-      scrolling="no"
+      scrolling="yes"
       style={{
         top: 0,
         left: 0,
