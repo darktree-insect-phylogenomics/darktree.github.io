@@ -44,6 +44,7 @@ const config = {
         path: 'first_glance',
         routeBasePath: 'first_glance',
         sidebarPath: require.resolve('./sidebarsGettingStarted.js'),
+        exclude: ['README.md'],
         // ... other options
       },
     ],
