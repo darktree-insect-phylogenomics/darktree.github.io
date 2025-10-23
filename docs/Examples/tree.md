@@ -5,7 +5,7 @@ sidebar_label: Tree placement
 ---
 # Tree placement
 
-# Tree Exemple
+# Tree Example
 
 <>
   <div
