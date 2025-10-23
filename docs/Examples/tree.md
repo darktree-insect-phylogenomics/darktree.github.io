@@ -23,7 +23,7 @@ sidebar_label: Tree placement
     }}
   >
     <iframe
-      src="https://darktree-insect-phylogenomics.github.io/darktree.github.io/tree/taxonium.html"
+      src="https://darktree-insect-phylogenomics.github.io/darktree.github.io/static/tree/taxonium.html"
       frameborder="0"
       scrolling="no"
       style={{
