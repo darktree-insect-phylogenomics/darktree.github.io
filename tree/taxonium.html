@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Insect tree</title>
+  <style>
+    /* Full viewport coverage */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+
+    #root {
+      width: 100%;
+      height: 100%;
+      position: relative; /* Provides positioning context for children */
+      display: flex; /* For centering the loading text */
+      justify-content: center;
+      align-items: center;
+      background-color: #f0f0f0;
+      color: #333;
+    }
+
+    .taxonium-wrapper {
+        width: 100%;
+        height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="module">
+    import React from 'https://esm.sh/react@19';
+    import { createRoot } from 'https://esm.sh/react-dom@19/client';
+    import Taxonium from 'https://esm.sh/taxonium-component';
+
+    const { createElement: h, useState, useEffect } = React;
+
+    function App() {
+      const [sourceData, setSourceData] = useState(null);
+      const [error, setError] = useState(null);
+
+      useEffect(() => {
+        const loadData = async () => {
+          try {
+            // Fetch the Newick tree data from local file (mandatory)
+            const nwkResponse = await fetch('tree.nwk');
+            if (!nwkResponse.ok) {
+              throw new Error(`Failed to load tree.nwk: ${nwkResponse.statusText}`);
+            }
+            const nwk = await nwkResponse.text();
+
+            let metadata = null;
+            try {
+              // Attempt to fetch the metadata CSV data (optional)
+              const metadataResponse = await fetch('metadata.csv');
+              if (metadataResponse.ok) {
+                const metadata_text = await metadataResponse.text();
+                metadata = {
+                  filename: "metadata.csv",
+                  data: metadata_text,
+                  status: "loaded",
+                  filetype: "meta_csv",
+                };
+              } else {
+                console.warn(`Metadata file 'metadata.csv' not found or could not be loaded (${metadataResponse.statusText}). Proceeding without metadata.`);
+              }
+            } catch (metaErr) {
+              console.warn(`Error fetching metadata.csv: ${metaErr.message}. Proceeding without metadata.`);
+            }
+
+            // Construct the sourceData object as Taxonium expects
+            const newSourceData = {
+              status: "loaded",
+              filename: "tree.nwk",
+              data: nwk,
+              filetype: "nwk",
+              // Include metadata only if it was successfully loaded
+              ...(metadata && { metadata: metadata }),
+              // Provide a default_config
+              default_config: {
+                layout: "rectangular",
+                tree_x_scale: "uniform",
+                initial_x_offset: 0,
+                initial_y_offset: 0,
+                initial_zoom: 1,
+                min_branch_length_px: 1,
+                max_branch_length_px: 1000,
+                viewport_width: window.innerWidth, // Pass viewport dimensions
+                viewport_height: window.innerHeight,
+              }
+            };
+
+            setSourceData(newSourceData);
+
+          } catch (err) {
+            console.error("Error loading Taxonium data:", err);
+            setError(err.message);
+          }
+        };
+
+        loadData();
+      }, []); // Empty dependency array means this runs once on mount
+
+      if (error) {
+        return h('div', null, `Error: ${error}`);
+      }
+
+      if (!sourceData) {
+        return h('div', null, 'Loading Taxonium data...');
+      }
+
+      // Render the Taxonium component, wrapped in a div with the 'taxonium' class
+      // and 'taxonium-wrapper' class
+      return h('div', { className: 'taxonium taxonium-wrapper' },
+        h(Taxonium, { sourceData: sourceData })
+      );
+    }
+
+    const container = document.getElementById('root');
+    const root = createRoot(container);
+    root.render(h(App));
+  </script>
+</body>
+</html>
