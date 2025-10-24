@@ -18,7 +18,7 @@ sidebar_label: Tree placement
       boxShadow:
         '0px 0px 1px rgba(45, 55, 72, 0.05), 0px 4px 8px rgba(45, 55, 72, 0.1)',
       overflow: 'hidden',
-      margin: '0 calc(-50vw + 50%)',
+      margin: '0 calc(+50vw + 50%)',
       maxWidth: '100vw',
     }}
   >
