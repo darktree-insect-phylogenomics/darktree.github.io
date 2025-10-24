@@ -26,6 +26,8 @@ sidebar_label: Tree placement
       scrolling="yes"
       style={{
         position: 'absolute',
+        margin: '0 calc(-50vw + 50%)',
+        maxWidth: '100vw',
         top: 0,
         left: 0,
         width: '100%',
