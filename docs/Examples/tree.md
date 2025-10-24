@@ -25,9 +25,9 @@ sidebar_label: Tree placement
       style={{
         position: 'absolute',
         top: '10px',
-        right: '10px',
+        left: '10px',
         zIndex: 10,
-        padding: '8px 16px',
+        padding: '8px 8px',
         backgroundColor: '#fff',
         border: '1px solid #e2e8f0',
         borderRadius: '6px',
