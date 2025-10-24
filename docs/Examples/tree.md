@@ -10,7 +10,7 @@ sidebar_label: Tree placement
     style={{
       boxSizing: 'content-box',
       position: 'relative',
-      maxWidth: '2560px',
+      width: '100%',
       aspectRatio: '2560 / 1308',
       paddingBottom: '40px',
       border: '1px solid #e2e8f0',
@@ -25,6 +25,7 @@ sidebar_label: Tree placement
       frameborder="0"
       scrolling="yes"
       style={{
+        position: 'absolute',
         top: 0,
         left: 0,
         width: '100%',
