@@ -18,8 +18,8 @@
     #root {
       width: 100%;
       height: 100%;
-      position: relative; /* Provides positioning context for children */
-      display: flex; /* For centering the loading text */
+      position: relative;
+      display: flex;
       justify-content: center;
       align-items: center;
       background-color: #fafafa;
@@ -30,9 +30,177 @@
         width: 100%;
         height: 100%;
     }
+
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #fafafa;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      transition: opacity 0.3s ease-out;
+    }
+
+    .loading-overlay.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e0e0e0;
+      border-top-color: #666;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      margin-top: 16px;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .selected-nodes-panel {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      width: 280px;
+      max-height: 300px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      font-size: 13px;
+    }
+
+    .selected-nodes-header {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e0e0e0;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f5f5f5;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .selected-nodes-header button {
+      background: none;
+      border: none;
+      color: #666;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 2px 6px;
+    }
+
+    .selected-nodes-header button:hover {
+      color: #333;
+      text-decoration: underline;
+    }
+
+    .selected-nodes-list {
+      overflow-y: auto;
+      flex: 1;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    .selected-nodes-list:empty::after {
+      content: "Click nodes on the tree to add them here";
+      display: block;
+      padding: 16px 12px;
+      color: #999;
+      font-style: italic;
+      text-align: center;
+    }
+
+    .selected-node-item {
+      padding: 8px 12px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .selected-node-item:last-child {
+      border-bottom: none;
+    }
+
+    .selected-node-item:hover {
+      background: #f9f9f9;
+    }
+
+    .selected-node-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .selected-node-remove {
+      background: none;
+      border: none;
+      color: #999;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      padding: 0 4px;
+    }
+
+    .selected-node-remove:hover {
+      color: #e53935;
+    }
+
+    .selected-nodes-actions {
+      padding: 8px 12px;
+      border-top: 1px solid #e0e0e0;
+      background: #f5f5f5;
+      border-radius: 0 0 8px 8px;
+    }
+
+    .copy-button {
+      width: 100%;
+      padding: 6px 12px;
+      background: #1976d2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .copy-button:hover {
+      background: #1565c0;
+    }
+
+    .copy-button:active {
+      background: #0d47a1;
+    }
+
+    .copy-button.copied {
+      background: #43a047;
+    }
   </style>
 </head>
 <body>
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <div class="loading-text">Loading tree...</div>
+  </div>
   <div id="root"></div>
 
   <script type="module">
@@ -40,11 +208,189 @@
     import { createRoot } from 'https://esm.sh/react-dom@19/client';
     import Taxonium from 'https://esm.sh/taxonium-component';
 
-    const { createElement: h, useState, useEffect } = React;
+    const { createElement: h, useState, useEffect, useCallback } = React;
+
+    // Selected Nodes Panel Component
+    function SelectedNodesPanel({ nodes, onRemove, onClear }) {
+      const [copied, setCopied] = useState(false);
+
+      const handleCopy = () => {
+        const text = nodes.map(n => n.name).join('\n');
+        navigator.clipboard.writeText(text).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        });
+      };
+
+      return h('div', { className: 'selected-nodes-panel' },
+        h('div', { className: 'selected-nodes-header' },
+          h('span', null, `Selected Nodes (${nodes.length})`),
+          nodes.length > 0 && h('button', { onClick: onClear }, 'Clear all')
+        ),
+        h('ul', { className: 'selected-nodes-list' },
+          nodes.map((node, index) =>
+            h('li', { key: node.id || index, className: 'selected-node-item' },
+              h('span', { className: 'selected-node-name', title: node.name }, node.name),
+              h('button', {
+                className: 'selected-node-remove',
+                onClick: () => onRemove(node.id),
+                title: 'Remove'
+              }, '\u00d7')
+            )
+          )
+        ),
+        nodes.length > 0 && h('div', { className: 'selected-nodes-actions' },
+          h('button', {
+            className: `copy-button${copied ? ' copied' : ''}`,
+            onClick: handleCopy
+          }, copied ? 'Copied!' : 'Copy to clipboard')
+        )
+      );
+    }
 
     function App() {
       const [sourceData, setSourceData] = useState(null);
       const [error, setError] = useState(null);
+      const [query, setQuery] = useState({});
+      const [selectedNodes, setSelectedNodes] = useState([]);
+
+      // Handler to update query state (used by Taxonium for view/selection state)
+      const updateQuery = (newQuery) => {
+        setQuery(prev => ({ ...prev, ...newQuery }));
+      };
+
+      // Handler for when node details are loaded - adds to our list with proper name
+      const handleNodeDetailsLoaded = useCallback((nodeId, nodeDetails) => {
+        if (nodeId === null || !nodeDetails) return;
+
+        // Extract the node name from details
+        // Try common property names for the node label/name
+        const nodeName = nodeDetails.name
+          || nodeDetails.label
+          || nodeDetails.node_name
+          || nodeDetails.taxon
+          || nodeDetails.strain
+          || nodeDetails.id
+          || (nodeDetails.meta && (nodeDetails.meta.name || nodeDetails.meta.label))
+          || `Node ${nodeId}`;
+
+        setSelectedNodes(prev => {
+          // Don't add duplicates
+          if (prev.some(n => n.id === nodeId)) {
+            return prev;
+          }
+          return [...prev, { id: nodeId, name: String(nodeName) }];
+        });
+
+        console.log('Node details loaded:', nodeId, nodeDetails);
+      }, []);
+
+      // Handler to remove a node from the list
+      const handleRemoveNode = useCallback((nodeId) => {
+        setSelectedNodes(prev => prev.filter(n => n.id !== nodeId));
+      }, []);
+
+      // Handler to clear all nodes
+      const handleClearNodes = useCallback(() => {
+        setSelectedNodes([]);
+      }, []);
+
+      // Workaround: Enable "Display points for internal nodes" after component loads
+      useEffect(() => {
+        if (!sourceData) return;
+
+        const enableInternalNodes = () => {
+          // Find and click the settings button (gear icon) to open the modal
+          const settingsButton = document.querySelector('button[aria-label="Settings"]')
+            || document.querySelector('button svg[data-icon="cog"]')?.closest('button')
+            || Array.from(document.querySelectorAll('button')).find(btn =>
+                btn.querySelector('svg') && btn.textContent === '');
+
+          if (!settingsButton) {
+            console.log('Settings button not found, retrying...');
+            return false;
+          }
+
+          settingsButton.click();
+
+          // Wait for modal to open, then find the checkboxes
+          setTimeout(() => {
+            const labels = Array.from(document.querySelectorAll('label'));
+
+            // Enable "Display points for internal nodes"
+            const pointsLabel = labels.find(label =>
+              label.textContent.includes('Display points for internal nodes')
+            );
+            const pointsCheckbox = pointsLabel?.querySelector('input[type="checkbox"]');
+            if (pointsCheckbox && !pointsCheckbox.checked) {
+              pointsCheckbox.click();
+              console.log('Enabled: Display points for internal nodes');
+            }
+
+            // Enable "Display labels for internal nodes if present"
+            const labelsLabel = labels.find(label =>
+              label.textContent.includes('Display labels for internal nodes')
+            );
+            const labelsCheckbox = labelsLabel?.querySelector('input[type="checkbox"]');
+            if (labelsCheckbox && !labelsCheckbox.checked) {
+              labelsCheckbox.click();
+              console.log('Enabled: Display labels for internal nodes if present');
+            }
+
+            // Close the modal by clicking the close button or backdrop
+            setTimeout(() => {
+              // Try clicking a close button (X)
+              const closeButton = document.querySelector('[aria-label="Close"]')
+                || document.querySelector('button svg[data-icon="times"]')?.closest('button')
+                || document.querySelector('[role="dialog"] button');
+
+              if (closeButton) {
+                closeButton.click();
+              } else {
+                // Try clicking the backdrop/overlay
+                const backdrop = document.querySelector('[role="dialog"]')?.parentElement;
+                if (backdrop) {
+                  backdrop.click();
+                }
+              }
+
+              // Fade out the loading overlay after modal is closed
+              setTimeout(() => {
+                const overlay = document.getElementById('loading-overlay');
+                if (overlay) {
+                  overlay.classList.add('fade-out');
+                  // Remove from DOM after transition completes
+                  setTimeout(() => overlay.remove(), 300);
+                }
+              }, 100);
+            }, 100);
+          }, 300);
+
+          return true;
+        };
+
+        // Retry until the settings button is available
+        const timer = setInterval(() => {
+          if (enableInternalNodes()) {
+            clearInterval(timer);
+          }
+        }, 1000);
+
+        // Stop trying after 10 seconds and remove overlay anyway
+        const timeout = setTimeout(() => {
+          clearInterval(timer);
+          const overlay = document.getElementById('loading-overlay');
+          if (overlay) {
+            overlay.classList.add('fade-out');
+            setTimeout(() => overlay.remove(), 300);
+          }
+        }, 10000);
+
+        return () => {
+          clearInterval(timer);
+          clearTimeout(timeout);
+        };
+      }, [sourceData]);
 
       useEffect(() => {
         const loadData = async () => {
@@ -56,45 +402,12 @@
             }
             const nwk = await nwkResponse.text();
 
-            let metadata = null;
-            try {
-              // Attempt to fetch the metadata CSV data (optional)
-              const metadataResponse = await fetch('metadata.csv');
-              if (metadataResponse.ok) {
-                const metadata_text = await metadataResponse.text();
-                metadata = {
-                  filename: "metadata.csv",
-                  data: metadata_text,
-                  status: "loaded",
-                  filetype: "meta_csv",
-                };
-              } else {
-                console.warn(`Metadata file 'metadata.csv' not found or could not be loaded (${metadataResponse.statusText}). Proceeding without metadata.`);
-              }
-            } catch (metaErr) {
-              console.warn(`Error fetching metadata.csv: ${metaErr.message}. Proceeding without metadata.`);
-            }
-
-            // Construct the sourceData object as Taxonium expects
+            // Construct the sourceData object per documented structure
             const newSourceData = {
               status: "loaded",
               filename: "tree.nwk",
-              data: nwk,
               filetype: "nwk",
-              // Include metadata only if it was successfully loaded
-              ...(metadata && { metadata: metadata }),
-              // Provide a default_config
-              default_config: {
-                layout: "rectangular",
-                tree_x_scale: "uniform",
-                initial_x_offset: 0,
-                initial_y_offset: 0,
-                initial_zoom: 1,
-                min_branch_length_px: 1,
-                max_branch_length_px: 1000,
-                viewport_width: window.innerWidth, // Pass viewport dimensions
-                viewport_height: window.innerHeight,
-              }
+              data: nwk,
             };
 
             setSourceData(newSourceData);
@@ -106,7 +419,7 @@
         };
 
         loadData();
-      }, []); // Empty dependency array means this runs once on mount
+      }, []);
 
       if (error) {
         return h('div', null, `Error: ${error}`);
@@ -116,10 +429,19 @@
         return h('div', null, 'Loading Taxonium data...');
       }
 
-      // Render the Taxonium component, wrapped in a div with the 'taxonium' class
-      // and 'taxonium-wrapper' class
+      // Render the Taxonium component with documented props and selected nodes panel
       return h('div', { className: 'taxonium taxonium-wrapper' },
-        h(Taxonium, { sourceData: sourceData })
+        h(Taxonium, {
+          sourceData: sourceData,
+          query: query,
+          updateQuery: updateQuery,
+          onNodeDetailsLoaded: handleNodeDetailsLoaded,
+        }),
+        h(SelectedNodesPanel, {
+          nodes: selectedNodes,
+          onRemove: handleRemoveNode,
+          onClear: handleClearNodes,
+        })
       );
     }
 
