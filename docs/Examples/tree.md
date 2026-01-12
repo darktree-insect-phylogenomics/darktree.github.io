@@ -5,6 +5,8 @@ sidebar_label: Tree placement
 ---
 # Tree placement
 
+The tree may take a moment to load.
+
 <>
   <div
     style={{
