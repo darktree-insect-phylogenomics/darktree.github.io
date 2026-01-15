@@ -72,8 +72,8 @@
 
     .selected-nodes-panel {
       position: fixed;
-      bottom: 16px;
-      right: 16px;
+      bottom: 200px;
+      left: 16px;
       width: 280px;
       max-height: 300px;
       background: white;
@@ -194,6 +194,41 @@
     .copy-button.copied {
       background: #43a047;
     }
+
+    .selected-node-item-wrapper {
+      border-bottom: 1px solid #eee;
+    }
+
+    .selected-node-item-wrapper:last-child {
+      border-bottom: none;
+    }
+
+    .selected-node-metadata {
+      padding: 6px 12px 10px 12px;
+      background: #f9f9f9;
+      font-size: 12px;
+      color: #555;
+    }
+
+    .selected-node-metadata > div {
+      margin-bottom: 4px;
+    }
+
+    .selected-node-metadata > div:last-child {
+      margin-bottom: 0;
+    }
+
+    .selected-node-sequences {
+      word-break: break-word;
+      max-height: 150px;
+      overflow-y: auto;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .selected-node-sequences .sequence-item {
+      margin-bottom: 2px;
+    }
   </style>
 </head>
 <body>
@@ -213,9 +248,21 @@
     // Selected Nodes Panel Component
     function SelectedNodesPanel({ nodes, onRemove, onClear }) {
       const [copied, setCopied] = useState(false);
+      const [expanded, setExpanded] = useState({});
+
+      const toggleExpand = (nodeId) => {
+        setExpanded(prev => ({ ...prev, [nodeId]: !prev[nodeId] }));
+      };
 
       const handleCopy = () => {
-        const text = nodes.map(n => n.name).join('\n');
+        const text = nodes.map(n => {
+          let line = n.name;
+          if (n.metadata) {
+            if (n.metadata.placement_count !== undefined) line += `\tPlacements: ${n.metadata.placement_count}`;
+            if (n.metadata.placement_bin !== undefined) line += `\tBin: ${n.metadata.placement_bin}`;
+          }
+          return line;
+        }).join('\n');
         navigator.clipboard.writeText(text).then(() => {
           setCopied(true);
           setTimeout(() => setCopied(false), 2000);
@@ -229,13 +276,33 @@
         ),
         h('ul', { className: 'selected-nodes-list' },
           nodes.map((node, index) =>
-            h('li', { key: node.id || index, className: 'selected-node-item' },
-              h('span', { className: 'selected-node-name', title: node.name }, node.name),
-              h('button', {
-                className: 'selected-node-remove',
-                onClick: () => onRemove(node.id),
-                title: 'Remove'
-              }, '\u00d7')
+            h('li', { key: node.id || index, className: 'selected-node-item-wrapper' },
+              h('div', { className: 'selected-node-item' },
+                h('span', {
+                  className: 'selected-node-name',
+                  title: node.name,
+                  onClick: () => toggleExpand(node.id),
+                  style: { cursor: 'pointer' }
+                }, node.name),
+                h('button', {
+                  className: 'selected-node-remove',
+                  onClick: () => onRemove(node.id),
+                  title: 'Remove'
+                }, '\u00d7')
+              ),
+              expanded[node.id] && node.metadata && h('div', { className: 'selected-node-metadata' },
+                node.metadata.placement_count !== undefined &&
+                  h('div', null, `Placements: ${node.metadata.placement_count}`),
+                node.metadata.placement_bin !== undefined &&
+                  h('div', null, `Bin: ${node.metadata.placement_bin}`),
+                node.metadata.top_sequences &&
+                  h('div', { className: 'selected-node-sequences' },
+                    h('div', null, 'Top sequences:'),
+                    ...node.metadata.top_sequences.split(';').map((seq, i) =>
+                      h('div', { key: i, className: 'sequence-item' }, seq.trim())
+                    )
+                  )
+              )
             )
           )
         ),
@@ -259,30 +326,30 @@
         setQuery(prev => ({ ...prev, ...newQuery }));
       };
 
-      // Handler for when node details are loaded - adds to our list with proper name
+      // Handler for when node details are loaded - adds to our list with full metadata
       const handleNodeDetailsLoaded = useCallback((nodeId, nodeDetails) => {
         if (nodeId === null || !nodeDetails) return;
 
-        // Extract the node name from details
-        // Try common property names for the node label/name
-        const nodeName = nodeDetails.name
+        // Extract the node name from details - prefer meta_name from metadata
+        const nodeName = nodeDetails.meta_name
+          || nodeDetails.name
           || nodeDetails.label
-          || nodeDetails.node_name
-          || nodeDetails.taxon
-          || nodeDetails.strain
-          || nodeDetails.id
-          || (nodeDetails.meta && (nodeDetails.meta.name || nodeDetails.meta.label))
           || `Node ${nodeId}`;
+
+        // Extract metadata fields
+        const metadata = {
+          placement_count: nodeDetails.meta_placement_count,
+          placement_bin: nodeDetails.meta_placement_bin,
+          top_sequences: nodeDetails.meta_top_sequences,
+        };
 
         setSelectedNodes(prev => {
           // Don't add duplicates
           if (prev.some(n => n.id === nodeId)) {
             return prev;
           }
-          return [...prev, { id: nodeId, name: String(nodeName) }];
+          return [...prev, { id: nodeId, name: String(nodeName), metadata }];
         });
-
-        console.log('Node details loaded:', nodeId, nodeDetails);
       }, []);
 
       // Handler to remove a node from the list
@@ -395,19 +462,88 @@
       useEffect(() => {
         const loadData = async () => {
           try {
-            // Fetch the Newick tree data from local file (mandatory)
-            const nwkResponse = await fetch('tree.nwk');
+            // Fetch the Newick tree data and metadata in parallel
+            const [nwkResponse, metadataResponse] = await Promise.all([
+              fetch('tree.nwk'),
+              fetch('metadata.tsv')
+            ]);
+
             if (!nwkResponse.ok) {
               throw new Error(`Failed to load tree.nwk: ${nwkResponse.statusText}`);
             }
             const nwk = await nwkResponse.text();
 
-            // Construct the sourceData object per documented structure
+            // Load metadata if available
+            let metadata = null;
+            let colorMapping = {};
+            if (metadataResponse.ok) {
+              const metadataText = await metadataResponse.text();
+              metadata = {
+                status: "loaded",
+                filename: "metadata.tsv",
+                filetype: "meta_tsv",
+                data: metadataText,
+                taxonColumn: "name",
+              };
+
+              // Parse metadata to find unique placement_bin values
+              const lines = metadataText.trim().split('\n');
+              const header = lines[0].split('\t');
+              const binIndex = header.indexOf('placement_bin');
+
+              if (binIndex !== -1) {
+                const uniqueBins = [...new Set(
+                  lines.slice(1).map(line => line.split('\t')[binIndex])
+                )].filter(v => v !== '').sort((a, b) => Number(a) - Number(b));
+
+                // Accessible Sunset palette from Bokeh (Paul Tol's scheme)
+                const sunsetPalette = [
+                  [54, 75, 154],   // #364B9A - deep blue
+                  [74, 123, 183],  // #4A7BB7
+                  [110, 166, 205], // #6EA6CD
+                  [152, 202, 225], // #98CAE1
+                  [194, 228, 239], // #C2E4EF
+                  [234, 236, 204], // #EAECCC - pale yellow
+                  [254, 218, 139], // #FEDA8B
+                  [253, 179, 102], // #FDB366
+                  [246, 126, 75],  // #F67E4B
+                  [221, 61, 45],   // #DD3D2D
+                  [165, 0, 38]     // #A50026 - deep red
+                ];
+
+                // Generate color from palette based on position
+                const generateColor = (value, values) => {
+                  if (value === '0' || value === 0) {
+                    return [180, 180, 180]; // Grey for zero
+                  }
+                  const nonZeroValues = values.filter(v => v !== '0' && v !== 0);
+                  const idx = nonZeroValues.indexOf(value);
+                  const t = nonZeroValues.length > 1 ? idx / (nonZeroValues.length - 1) : 0;
+
+                  // Use full Sunset palette (blue to red)
+                  const paletteIdx = Math.min(
+                    Math.floor(t * (sunsetPalette.length - 0.01)),
+                    sunsetPalette.length - 1
+                  );
+                  return sunsetPalette[paletteIdx];
+                };
+
+                uniqueBins.forEach(bin => {
+                  colorMapping[String(bin)] = generateColor(bin, uniqueBins);
+                });
+
+                console.log('Generated colorMapping:', colorMapping);
+              }
+            }
+
+            // Construct the sourceData object with metadata
             const newSourceData = {
               status: "loaded",
               filename: "tree.nwk",
               filetype: "nwk",
               data: nwk,
+              metadata: metadata,
+              colorMapping: colorMapping,
             };
 
             setSourceData(newSourceData);
@@ -433,6 +569,15 @@
       return h('div', { className: 'taxonium taxonium-wrapper' },
         h(Taxonium, {
           sourceData: sourceData,
+          configDict: {
+            defaultColorByField: "meta_placement_bin",
+            colorMapping: sourceData.colorMapping || {},
+            keys_to_display: [
+              "meta_placement_count",
+              "meta_placement_bin",
+              "meta_top_sequences"
+            ]
+          },
           query: query,
           updateQuery: updateQuery,
           onNodeDetailsLoaded: handleNodeDetailsLoaded,
