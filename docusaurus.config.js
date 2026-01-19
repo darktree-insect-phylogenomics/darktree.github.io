@@ -64,21 +64,30 @@ const config = {
         // },
         items: [
           {
-            to: '/first_glance/first_glance',
-            position: 'left',
-            label: 'About',
-            activeBaseRegex: `/first_glance/`
-          },
-          {
-            type: 'doc',
+            to: 'about',
             docId: 'docs',
             position: 'left',
-            label: 'Details',
+            label: 'Project',
+          },
+          {
+            to: 'tree',
+            position: 'left',
+            label: 'Explore_Tree',
+          },
+          {
+            type: 'involve',
+            position: 'left',
+            label: 'Get_involve',
           },
           {
             to: 'members',
             position: 'left',
-            label: 'Contributors',
+            label: 'People',
+          },
+          {
+            to: 'blog',
+            position: 'left',
+            label: 'News',
           },
           {
             href: 'https://github.com/insect-darktree',
