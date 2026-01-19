@@ -23,7 +23,7 @@ The tree may take a moment to load.
     }}
   >
     <button
-      onClick={() => window.open('https://darktree-insect-phylogenomics.github.io/darktree.github.io/backbone/taxonium.html', '_blank', 'width=1400,height=900,menubar=no,toolbar=no,location=no,status=no')}
+      onClick={() => window.open('https://insect-darktree.github.io/backbone/taxonium.html', '_blank', 'width=1400,height=900,menubar=no,toolbar=no,location=no,status=no')}
       style={{
         position: 'absolute',
         top: '10px',
@@ -44,7 +44,7 @@ The tree may take a moment to load.
       🗗 Open in New Window
     </button>
     <iframe
-      src="https://darktree-insect-phylogenomics.github.io/darktree.github.io/backbone/taxonium.html"
+      src="https://insect-darktree.github.io/backbone/taxonium.html)
       frameborder="0"
       scrolling="yes"
       style={{
