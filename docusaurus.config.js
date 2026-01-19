@@ -8,10 +8,10 @@ const darkCodeTheme = themes.dracula;
 const config = {
   title: 'DarkTree',
   tagline: 'Mapping the DarkTaxa',
-  url: 'https://insect-darktree/',
-  baseUrl: '/darktree.github.io/',
-  projectName: 'DarkTree.io',
-  organizationName: 'DarkTree',
+  url: 'https://insect-darktree.github.io', // Your website URL
+  baseUrl: '/',
+  projectName: 'insect-darktree.github.io',
+  organizationName: 'insect-darktree',
   trailingSlash: false,
   deploymentBranch: 'gh-pages',
   // TODO We should eventually fix broken links and throw if any are found
