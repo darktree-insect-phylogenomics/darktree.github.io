@@ -8,9 +8,9 @@ const darkCodeTheme = themes.dracula;
 const config = {
   title: 'DarkTree',
   tagline: 'Mapping the DarkTaxa',
-  url: 'https://darktree-insect-phylogenomics/',
-  baseUrl: '/darktree.github.io/',
-  projectName: 'DarkTree.github.io',
+  url: 'https://insect-darktree/',
+  baseUrl: '/insect-darktree.io/',
+  projectName: 'DarkTree.io',
   organizationName: 'DarkTree',
   trailingSlash: false,
   deploymentBranch: 'gh-pages',
@@ -81,7 +81,7 @@ const config = {
             label: 'Contributors',
           },
           {
-            href: 'https://github.com/darktree-insect-phylogenomics',
+            href: 'https://github.com/insect-darktree',
             label: 'GitHub',
             position: 'right',
           },
