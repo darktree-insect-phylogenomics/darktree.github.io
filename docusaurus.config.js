@@ -40,9 +40,31 @@ const config = {
     [
       '@docusaurus/plugin-content-docs',
       {
-        id: 'first_glance',
-        path: 'first_glance',
-        routeBasePath: 'first_glance',
+        id: 'tree',
+        path: 'tree',
+        routeBasePath: 'tree',
+        sidebarPath: require.resolve('./sidebarsGettingStarted.js'),
+        exclude: ['README.md'],
+        // ... other options
+      },
+    ],
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        id: 'involved',
+        path: 'involved',
+        routeBasePath: 'involved',
+        sidebarPath: require.resolve('./sidebarsGettingStarted.js'),
+        exclude: ['README.md'],
+        // ... other options
+      },
+    ],
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        id: 'blog',
+        path: 'blog',
+        routeBasePath: 'blog',
         sidebarPath: require.resolve('./sidebarsGettingStarted.js'),
         exclude: ['README.md'],
         // ... other options
@@ -57,27 +79,27 @@ const config = {
       },
       navbar: {
         title: 'DarkTree',
-        // TODO Add DarkTree logo
-        // logo: {
-        //   alt: 'DarkTree Logo',
-        //   src: 'img/logo.svg',
-        // },
-        items: [
+        logo: {
+          alt: 'DarkTree Logo',
+          src: 'img/dk_logo.jpg',
+        },
+        items: [          
           {
-            to: 'about',
-            docId: 'docs',
+            to: 'docs',
             position: 'left',
             label: 'Project',
           },
           {
-            to: 'tree',
+            to: '/tree/tree',
             position: 'left',
             label: 'Explore_Tree',
+            activeBaseRegex: `/tree/`
           },
           {
-            type: 'involve',
+            to: '/involved/get_involved',
             position: 'left',
-            label: 'Get_involve',
+            label: 'Get_involved',
+            activeBaseRegex: `/get_involved/`
           },
           {
             to: 'members',
@@ -85,9 +107,10 @@ const config = {
             label: 'People',
           },
           {
-            to: 'blog',
+            to: '/blog/news',
             position: 'left',
             label: 'News',
+            activeBaseRegex: `/news/`
           },
           {
             href: 'https://github.com/insect-darktree',
