@@ -44,7 +44,7 @@ The tree may take a moment to load.
       🗗 Open in New Window
     </button>
     <iframe
-      src="https://insect-darktree.github.io/backbone/taxonium.html)
+      src="https://insect-darktree.github.io/backbone/taxonium.html"
       frameborder="0"
       scrolling="yes"
       style={{
