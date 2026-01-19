@@ -66,7 +66,7 @@ const config = {
           {
             to: '/first_glance/first_glance',
             position: 'left',
-            label: 'Welcome',
+            label: 'About',
             activeBaseRegex: `/first_glance/`
           },
           {
