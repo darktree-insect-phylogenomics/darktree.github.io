@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Insect tree with placements</title>
+  <title>Insect tree</title>
   <style>
     /* Full viewport coverage */
     html, body {
@@ -72,7 +72,7 @@
 
     .selected-nodes-panel {
       position: fixed;
-      bottom: 200px;
+      bottom: 240px;
       left: 16px;
       width: 280px;
       max-height: 300px;
@@ -258,8 +258,11 @@
         const text = nodes.map(n => {
           let line = n.name;
           if (n.metadata) {
+            if (n.metadata.subclass) line += `\t${n.metadata.subclass}`;
+            if (n.metadata.order) line += `\t${n.metadata.order}`;
+            if (n.metadata.family) line += `\t${n.metadata.family}`;
+            if (n.metadata.genus) line += `\t${n.metadata.genus}`;
             if (n.metadata.placement_count !== undefined) line += `\tPlacements: ${n.metadata.placement_count}`;
-            if (n.metadata.placement_bin !== undefined) line += `\tBin: ${n.metadata.placement_bin}`;
           }
           return line;
         }).join('\n');
@@ -291,10 +294,16 @@
                 }, '\u00d7')
               ),
               expanded[node.id] && node.metadata && h('div', { className: 'selected-node-metadata' },
+              node.metadata.subclass &&
+                  h('div', null, `Subclass: ${node.metadata.subclass}`),
+                node.metadata.order &&
+                  h('div', null, `Order: ${node.metadata.order}`),
+                node.metadata.family &&
+                  h('div', null, `Family: ${node.metadata.family}`),
+                node.metadata.genus &&
+                  h('div', null, `Genus: ${node.metadata.genus}`),
                 node.metadata.placement_count !== undefined &&
                   h('div', null, `Placements: ${node.metadata.placement_count}`),
-                node.metadata.placement_bin !== undefined &&
-                  h('div', null, `Bin: ${node.metadata.placement_bin}`),
                 node.metadata.top_sequences &&
                   h('div', { className: 'selected-node-sequences' },
                     h('div', null, 'Top sequences:'),
@@ -338,8 +347,11 @@
 
         // Extract metadata fields
         const metadata = {
+          subclass: nodeDetails.meta_subclass,
+          order: nodeDetails.meta_order,
+          family: nodeDetails.meta_family,
+          genus: nodeDetails.meta_genus,
           placement_count: nodeDetails.meta_placement_count,
-          placement_bin: nodeDetails.meta_placement_bin,
           top_sequences: nodeDetails.meta_top_sequences,
         };
 
@@ -478,62 +490,75 @@
             let colorMapping = {};
             if (metadataResponse.ok) {
               const metadataText = await metadataResponse.text();
-              metadata = {
-                status: "loaded",
-                filename: "metadata.tsv",
-                filetype: "meta_tsv",
-                data: metadataText,
-                taxonColumn: "name",
-              };
 
-              // Parse metadata to find unique placement_bin values
+              // Parse metadata and remove placement_bin column
               const lines = metadataText.trim().split('\n');
               const header = lines[0].split('\t');
               const binIndex = header.indexOf('placement_bin');
 
+              // Filter out placement_bin column from metadata
+              let filteredMetadataText = metadataText;
               if (binIndex !== -1) {
-                const uniqueBins = [...new Set(
-                  lines.slice(1).map(line => line.split('\t')[binIndex])
-                )].filter(v => v !== '').sort((a, b) => Number(a) - Number(b));
+                const filteredLines = lines.map(line => {
+                  const cols = line.split('\t');
+                  cols.splice(binIndex, 1);
+                  return cols.join('\t');
+                });
+                filteredMetadataText = filteredLines.join('\n');
+              }
 
-                // Accessible Sunset palette from Bokeh (Paul Tol's scheme)
-                const sunsetPalette = [
-                  [54, 75, 154],   // #364B9A - deep blue
-                  [74, 123, 183],  // #4A7BB7
-                  [110, 166, 205], // #6EA6CD
-                  [152, 202, 225], // #98CAE1
-                  [194, 228, 239], // #C2E4EF
-                  [234, 236, 204], // #EAECCC - pale yellow
-                  [254, 218, 139], // #FEDA8B
-                  [253, 179, 102], // #FDB366
-                  [246, 126, 75],  // #F67E4B
-                  [221, 61, 45],   // #DD3D2D
-                  [165, 0, 38]     // #A50026 - deep red
-                ];
+              metadata = {
+                status: "loaded",
+                filename: "metadata.tsv",
+                filetype: "meta_tsv",
+                data: filteredMetadataText,
+                taxonColumn: "name",
+              };
 
-                // Generate color from palette based on position
-                const generateColor = (value, values) => {
-                  if (value === '0' || value === 0) {
-                    return [180, 180, 180]; // Grey for zero
-                  }
-                  const nonZeroValues = values.filter(v => v !== '0' && v !== 0);
-                  const idx = nonZeroValues.indexOf(value);
-                  const t = nonZeroValues.length > 1 ? idx / (nonZeroValues.length - 1) : 0;
+              // Accessible Sunset palette from Bokeh (Paul Tol's scheme)
+              const sunsetPalette = [
+                [54, 75, 154],   // #364B9A - deep blue
+                [74, 123, 183],  // #4A7BB7
+                [110, 166, 205], // #6EA6CD
+                [152, 202, 225], // #98CAE1
+                [194, 228, 239], // #C2E4EF
+                [234, 236, 204], // #EAECCC - pale yellow
+                [254, 218, 139], // #FEDA8B
+                [253, 179, 102], // #FDB366
+                [246, 126, 75],  // #F67E4B
+                [221, 61, 45],   // #DD3D2D
+                [165, 0, 38]     // #A50026 - deep red
+              ];
 
-                  // Use full Sunset palette (blue to red)
+              // Find the maximum placement_count value for color scaling
+              const countIndex = header.indexOf('placement_count');
+              let maxValue = 0;
+
+              lines.slice(1).forEach(line => {
+                const cols = line.split('\t');
+                if (countIndex !== -1 && cols[countIndex]) {
+                  maxValue = Math.max(maxValue, Number(cols[countIndex]) || 0);
+                }
+              });
+
+              // Generate colors for all integers from 0 to maxValue using log scale
+              // This ensures consistent colors regardless of which field is selected
+              colorMapping["0"] = [180, 180, 180]; // Grey for zero
+
+              if (maxValue > 0) {
+                const logMax = Math.log(maxValue + 1);
+                for (let i = 1; i <= maxValue; i++) {
+                  // Use logarithmic scale to spread colors better
+                  const t = Math.log(i + 1) / logMax;
                   const paletteIdx = Math.min(
                     Math.floor(t * (sunsetPalette.length - 0.01)),
                     sunsetPalette.length - 1
                   );
-                  return sunsetPalette[paletteIdx];
-                };
-
-                uniqueBins.forEach(bin => {
-                  colorMapping[String(bin)] = generateColor(bin, uniqueBins);
-                });
-
-                console.log('Generated colorMapping:', colorMapping);
+                  colorMapping[String(i)] = sunsetPalette[paletteIdx];
+                }
               }
+
+              console.log('Generated colorMapping for values 0 to', maxValue);
             }
 
             // Construct the sourceData object with metadata
@@ -570,11 +595,14 @@
         h(Taxonium, {
           sourceData: sourceData,
           configDict: {
-            defaultColorByField: "meta_placement_bin",
+            defaultColorByField: "meta_placement_count",
             colorMapping: sourceData.colorMapping || {},
             keys_to_display: [
+              "meta_subclass",
+              "meta_order",
+              "meta_family",
+              "meta_genus",
               "meta_placement_count",
-              "meta_placement_bin",
               "meta_top_sequences"
             ]
           },
