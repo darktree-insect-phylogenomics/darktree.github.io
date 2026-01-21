@@ -5,6 +5,8 @@ sidebar_label: Tree placement
 ---
 # Tree placement
 
+To explore branches in the insect tree with many barcode placements (based on data from the Insect Biome Atlas), hover over or click on the nodes. The child nodes of a given branch are coloured based on the placement counts for the branch by default. To colour the leaves by taxonomy, select another option from the dropdown menu (e.g. order, family, or genus). Use the search function to find species of interest.
+
 The tree may take a moment to load.
 
 <>
