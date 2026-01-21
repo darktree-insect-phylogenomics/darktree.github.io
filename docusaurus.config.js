@@ -92,13 +92,13 @@ const config = {
           {
             to: '/tree/tree',
             position: 'left',
-            label: 'Explore_Tree',
+            label: 'Explore tree',
             activeBaseRegex: `/tree/`
           },
           {
             to: '/involved/get_involved',
             position: 'left',
-            label: 'Get_involved',
+            label: 'Get involved',
             activeBaseRegex: `/get_involved/`
           },
           {
